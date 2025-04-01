@@ -16,5 +16,5 @@ docker-compose up
 
 # Rode esse comando se pretende rodar a aplicação em development mode
 # Nesse modo o desenvolvedor tem acesso a hotreload feature
-docker-compose up -f docker-compose.development.yaml
+docker-compose -f docker-compose.development.yaml up
 ```
