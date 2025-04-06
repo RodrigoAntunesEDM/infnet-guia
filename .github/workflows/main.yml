@@ -24,7 +24,7 @@ jobs:
       - name: Instalar pnpm
         run: npm install -g pnpm
 
-      # 3. Validar Node (opcional)
+      # 3. Validar Node
       - name: Verificar versão do Node
         run: node -v
 
