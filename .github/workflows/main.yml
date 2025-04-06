@@ -16,16 +16,18 @@ jobs:
 
       # 2. Instalar Node.js e pnpm
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'pnpm'
+          node-version: 18
 
-      - name: Instalar pnpm
-        uses: pnpm/action-setup@v3
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
         with:
           version: 8
 
+      - name: Instalar dependências
+        run: pnpm install
+      
       # 3. Validar Node
       - name: Verificar versão do Node
         run: node -v
