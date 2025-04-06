@@ -22,7 +22,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Instalar pnpm
-        run: npm install -g pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
       # 3. Validar Node
       - name: Verificar versão do Node
