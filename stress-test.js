@@ -10,7 +10,7 @@ export let options = {
 };
 
 export default function () {
-  const res = http.get('http://infnet-app-service:3000');
+  const res = http.get('http://127.0.0.1:3000');
   
   check(res, {
     'is status 200': (r) => r.status === 200,
