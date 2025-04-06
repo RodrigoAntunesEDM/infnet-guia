@@ -1,0 +1,42 @@
+---
+# Serviço externo com LoadBalancer (funciona com Minikube via minikube tunnel)
+apiVersion: v1
+kind: Service
+metadata:
+  name: infnet-app-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: infnet-app
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+
+---
+# Deployment da aplicação
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: infnet-app-deployment
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: infnet-app
+  template:
+    metadata:
+      labels:
+        app: infnet-app
+    spec:
+      containers:
+        - name: infnet-app
+          image: rodrigovantunes/infnet-app:latest  
+          ports:
+            - containerPort: 3000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 180
