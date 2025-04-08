@@ -1,20 +1,78 @@
-# Overview
+# Introdução
 
-Essa é uma aplicação para gerenciar seus estudos no Infnet
+Esse é um repositório com os artefatos utilizados para a entrega do trabalho da discplina de Integração Contínua, DevOps e Computação em Nuvem do curso MIT - Arquitetura de Software da Faculdade Infnet.
 
+## O que está sendo entregue
+Para a entrega desse trabalho será utilizada uma aplicaçao disponibilizada pelo professor para deploy no Kubernetes. 
 
-## Getting Started
+Este trabalho usará para fins de teste/ilustração:
+* Docker para utilização de containers
+* Kubernetes/minikube para orquestração de containers (instalado localmente)
+* Prometheus e Grafana para observabilidade
+* k6 como ferramenta de testes
+* Github Acitions como ferramenta de pipeline (CI/CD)
+* Arquivos de deployment para Docker e Kubernetes
+
 
 ### Docker
 
-A aplicação está configura para rodar com Docker e Docker Compose. Se você não possui o docker engine instalado, siga o tutorial de instalação na [documentação oficial](https://docs.docker.com/get-started/get-docker/).
-
-Após instalar o docker engine:
+Para executar o container localmente execute o comando abaixo:
 ```
-# Rode esse comando se pretende rodar a aplicação em production mode
+# Rode esse comando se pretende rodar a aplicação
 docker-compose up
-
-# Rode esse comando se pretende rodar a aplicação em development mode
-# Nesse modo o desenvolvedor tem acesso a hotreload feature
-docker-compose -f docker-compose.development.yaml up
 ```
+A imagem gerada dessa aplicação está disponível no Docker hub em: rodrigovantunes/infnet-app e será utilizada para criação dos containers no Kubernetes.
+
+
+
+### Kubernetes
+**Executar o ambiente no Minikube:**
+```
+# Ininciar o minikube
+minikube start
+
+#Abrir o tunel para poder acessar a aplicação e acomapnhar a obserrvabilidade
+minikube tunnel
+```
+**Deploy da aplicação**
+```
+Executar o comando abaixo
+kubectl apply -f app-deployment.yaml
+```
+* Serão criadas 4 pods da aplicação
+* Serviço Load Balancer para acesso fora do cluster
+* Probe Liveness
+* Não usa banco de dados
+* Disponível em: http://127.0.0.1:3000
+
+
+**Deploy do Prometheus**
+```
+Executar o comando abaixo
+kubectl apply -f prometheus-deployment.yaml
+```
+* Serviço Load Balancer para acesso fora do cluster
+* Coleta das métricas da aplicação para uso do Grafana
+* Disponível em: http://127.0.0.1:9090
+
+**Deploy do Grafana**
+```
+Executar o comando abaixo
+kubectl apply -f grafana-deployment.yaml
+```
+* Serviço Load Balancer para acesso fora do cluster
+* Apresenta dashboars das métricas da aplicação coletadas pelo Prometheus
+* Disponível em: http://127.0.0.1:32000
+
+  
+**Deploy do K6**
+```
+Executar o comando abaixo
+kubectl apply -f k6-deployment.yaml
+```
+* Instância o K6 e executa testes de stress na aplicação
+* Expõe o resultado para o Prometheus
+
+### Github Actions (CI/CD)
+Foi implementada uma pipeline que trata o build da versão e publicação no docker hub quando ocorrer um commit na main.
+A pipeline está neste repositório em main/.github/workflows/main.yml
