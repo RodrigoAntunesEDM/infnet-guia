@@ -3,13 +3,13 @@
 Esse é um repositório com os artefatos utilizados para a entrega do trabalho da discplina de Integração Contínua, DevOps e Computação em Nuvem do curso MIT - Arquitetura de Software da Faculdade Infnet.
 
 ## O que está sendo entregue
-Para a entrega desse trabalho será utilizada uma aplicaçao disponibilizada pelo professor para deploy no Kubernetes. 
+Para a entrega desse trabalho foi utilizada uma aplicaçao disponibilizada pelo professor para deploy no Kubernetes. 
 
-Este trabalho usará para fins de teste/ilustração:
+Este trabalho usará para fins de teste/ilustração os seguintes artefatos:
 * Docker para utilização de containers
 * Kubernetes/minikube para orquestração de containers (instalado localmente)
 * Prometheus e Grafana para observabilidade
-* k6 como ferramenta de testes
+* K6 como ferramenta de testes
 * Github Acitions como ferramenta de pipeline (CI/CD)
 * Arquivos de deployment para Docker e Kubernetes
 
@@ -28,10 +28,10 @@ A imagem gerada dessa aplicação está disponível no Docker hub em: rodrigovan
 ### Kubernetes
 **Executar o ambiente no Minikube:**
 ```
-# Ininciar o minikube
+# Iniciar o minikube
 minikube start
 
-#Abrir o tunel para poder acessar a aplicação e acomapnhar a obserrvabilidade
+#Abrir o tunel para poder acessar a aplicação e acomapnhar a observabilidade
 minikube tunnel
 ```
 **Deploy da aplicação**
