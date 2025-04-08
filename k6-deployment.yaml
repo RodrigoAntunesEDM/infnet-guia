@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6-load-test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6-load-test
+  template:
+    metadata:
+      labels:
+        app: k6-load-test
+    spec:
+      containers:
+        - name: k6
+          image: grafana/k6:latest
+          args:
+            - run
+            - --out
+            - experimental-prometheus-rw
+            - /scripts/metrics-script.js
+          env:
+            - name: K6_PROMETHEUS_RW_SERVER_URL
+              value: http://prometheus-service:9090/api/v1/write
+          volumeMounts:
+            - name: k6-script-volume
+              mountPath: /scripts
+      volumes:
+        - name: k6-script-volume
+          configMap:
+            name: k6-test-script
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-test-script
+data:
+  metrics-script.js: |
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+    import { Counter, Gauge, Trend, Rate } from 'k6/metrics';
+
+    const myCounter = new Counter('custom_counter_total');
+    const myGauge = new Gauge('custom_gauge_value');
+    const myTrend = new Trend('custom_response_time_ms');
+    const myRate = new Rate('custom_success_rate');
+
+    export const options = {
+      vus: 10,
+      duration: '30s',
+      tags: { test_type: 'custom_metrics' },
+    };
+
+    export default function () {
+      const start = Date.now();
+      const res = http.get('http://infnet-app-service:3000');
+      const duration = Date.now() - start;
+
+      myCounter.add(1);
+      myGauge.add(duration);
+      myTrend.add(duration);
+      myRate.add(res.status === 200);
+
+      check(res, {
+        'status is 200': () => res.status === 200,
+      });
+
+      sleep(1);
+    }
