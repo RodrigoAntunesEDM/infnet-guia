@@ -1,3 +1,15 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -9,19 +21,17 @@ data:
     global:
       scrape_interval: 15s
 
-    remote_write:
-      - url: http://127.0.0.1:9090/api/v1/write
-
     scrape_configs:
       - job_name: 'prometheus'
         static_configs:
           - targets: ['localhost:9090']
-
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prometheus-deployment
+  labels:
+    app: prometheus
 spec:
   replicas: 1
   selector:
@@ -34,19 +44,25 @@ spec:
     spec:
       containers:
         - name: prometheus
-          image: prom/prometheus
+          image: prom/prometheus:latest
           args:
             - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-lifecycle"
           ports:
             - containerPort: 9090
           volumeMounts:
-            - name: config-volume
+            - name: prometheus-config-volume
               mountPath: /etc/prometheus
+            - name: prometheus-storage-volume
+              mountPath: /prometheus
       volumes:
-        - name: config-volume
+        - name: prometheus-config-volume
           configMap:
             name: prometheus-config
-
+        - name: prometheus-storage-volume
+          persistentVolumeClaim:
+            claimName: prometheus-pvc
 ---
 apiVersion: v1
 kind: Service
