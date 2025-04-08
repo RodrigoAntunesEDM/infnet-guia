@@ -1,19 +1,145 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  labels:
+    grafana_datasource: "1"
+data:
+  datasource.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-service:9090
+        isDefault: true
+
 ---
 apiVersion: v1
-kind: Service
+kind: ConfigMap
 metadata:
-  name: grafana
-spec:
-  ports:
-    - port: 4000
-  selector:
-    app: grafana
+  name: grafana-dashboard-provider
+data:
+  dashboard-provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ""
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-dashboard
+data:
+  k6-dashboard.json: |
+    {
+      "id": null,
+      "uid": "k6-basic",
+      "title": "K6 Load Test Metrics",
+      "timezone": "browser",
+      "schemaVersion": 30,
+      "version": 1,
+      "refresh": "5s",
+      "panels": [
+        {
+          "type": "graph",
+          "title": "Tempo de Resposta (ms)",
+          "targets": [
+            {
+              "expr": "custom_response_time_ms",
+              "legendFormat": "Response Time",
+              "refId": "A"
+            }
+          ],
+          "datasource": "Prometheus",
+          "id": 1
+        },
+        {
+          "type": "graph",
+          "title": "Requisições por segundo (Counter)",
+          "targets": [
+            {
+              "expr": "rate(custom_counter_total[30s])",
+              "legendFormat": "RPS",
+              "refId": "A"
+            }
+          ],
+          "datasource": "Prometheus",
+          "id": 2
+        },
+        {
+          "type": "gauge",
+          "title": "Taxa de Sucesso (%)",
+          "targets": [
+            {
+              "expr": "avg(custom_success_rate) * 100",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "min": 0,
+              "max": 100,
+              "unit": "percent"
+            },
+            "overrides": []
+          },
+          "datasource": "Prometheus",
+          "id": 3
+        },
+        {
+          "type": "stat",
+          "title": "Usuários Virtuais (VUs)",
+          "targets": [
+            {
+              "expr": "vus",
+              "refId": "A"
+            }
+          ],
+          "datasource": "Prometheus",
+          "id": 4
+        },
+        {
+          "type": "graph",
+          "title": "Erros por Código de Status",
+          "targets": [
+            {
+              "expr": "rate(http_reqs{status!~\"2..\"}[30s])",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ],
+          "datasource": "Prometheus",
+          "id": 5
+        },
+        {
+          "type": "graph",
+          "title": "Duração Total das Requisições (http_req_duration)",
+          "targets": [
+            {
+              "expr": "http_req_duration",
+              "refId": "A",
+              "legendFormat": "latência"
+            }
+          ],
+          "datasource": "Prometheus",
+          "id": 6
+        }
+      ]
+    }
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: grafana
+  name: grafana-deployment
 spec:
   replicas: 1
   selector:
@@ -28,7 +154,39 @@ spec:
         - name: grafana
           image: grafana/grafana:latest
           ports:
-            - containerPort: 4000
-          env:
-            - name: GF_SECURITY_ADMIN_PASSWORD
-              value: "admin"
+            - containerPort: 3000
+          volumeMounts:
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
+            - name: datasource-config
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-provider
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard-config
+              mountPath: /var/lib/grafana/dashboards
+      volumes:
+        - name: grafana-storage
+          emptyDir: {}
+        - name: datasource-config
+          configMap:
+            name: grafana-datasource
+        - name: dashboard-provider
+          configMap:
+            name: grafana-dashboard-provider
+        - name: dashboard-config
+          configMap:
+            name: k6-dashboard
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: grafana
+  ports:
+    - protocol: TCP
+      port: 32000       # Porta externa
+      targetPort: 3000  # Porta interna
